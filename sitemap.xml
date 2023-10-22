@@ -92,7 +92,7 @@
   </url>
   
   <url>
-    <loc>https://github.com/fanyixiao/fanyixiao.github.io/box/nav/index.html</loc>
+    <loc>https://github.com/fanyixiao/fanyixiao.github.io/box/gallery/index.html</loc>
     
     <lastmod>2023-03-22</lastmod>
     
@@ -101,7 +101,7 @@
   </url>
   
   <url>
-    <loc>https://github.com/fanyixiao/fanyixiao.github.io/box/gallery/index.html</loc>
+    <loc>https://github.com/fanyixiao/fanyixiao.github.io/box/nav/index.html</loc>
     
     <lastmod>2023-03-22</lastmod>
     
@@ -228,13 +228,6 @@
 
   
   <url>
-    <loc>https://github.com/fanyixiao/fanyixiao.github.io/categories/%E6%BC%94%E7%A4%BA/</loc>
-    <lastmod>2023-10-22</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.2</priority>
-  </url>
-  
-  <url>
     <loc>https://github.com/fanyixiao/fanyixiao.github.io/categories/Hexo/</loc>
     <lastmod>2023-10-22</lastmod>
     <changefreq>weekly</changefreq>
@@ -243,6 +236,13 @@
   
   <url>
     <loc>https://github.com/fanyixiao/fanyixiao.github.io/categories/%E6%B8%B8%E6%88%8F/</loc>
+    <lastmod>2023-10-22</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.2</priority>
+  </url>
+  
+  <url>
+    <loc>https://github.com/fanyixiao/fanyixiao.github.io/categories/%E6%BC%94%E7%A4%BA/</loc>
     <lastmod>2023-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.2</priority>
