@@ -1,0 +1,1676 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>挂机成长游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    
+    <!-- 配置Tailwind自定义颜色和字体 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#4F46E5', // 主色调：深紫色
+                        secondary: '#10B981', // 辅助色：绿色（用于经验条）
+                        accent: '#F59E0B', // 强调色：橙色（用于按钮）
+                        click: '#EC4899', // 点击相关：粉色
+                        auto: '#3B82F6',   // 自动相关：蓝色
+                        dark: '#1E293B',
+                        light: '#F8FAFC',
+                        rare: '#D97706',   // 稀有丹药颜色
+                        epic: '#8B5CF6',   // 史诗丹药颜色
+                        legend: '#EC4899',  // 传说丹药颜色
+                        mythic: '#06B6D4',  // 神话丹药颜色
+                        celestial: '#F472B6', // 神圣丹药颜色
+                        // 新增丹药类型颜色
+                        ancient: '#808080', // 远古丹药
+                        dragon: '#FF4500',  // 龙血丹药
+                        phoenix: '#FF69B4', // 凤凰丹药
+                        void: '#4B0082'     // 虚空丹药
+                    },
+                    fontFamily: {
+                        game: ['"Press Start 2P"', 'cursive', 'sans-serif'],
+                        sans: ['Inter', 'system-ui', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- 自定义工具类 -->
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .animate-pulse-slow {
+                animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            }
+            .animate-float {
+                animation: float 3s ease-in-out infinite;
+            }
+            .animate-level-up {
+                animation: levelUp 1s ease-out;
+            }
+            .animate-upgrade {
+                animation: upgrade 0.5s ease-out;
+            }
+            .animate-scene-change {
+                animation: sceneChange 1s ease-in-out;
+            }
+            .animate-drop {
+                animation: drop 0.8s ease-out;
+            }
+            .animate-use {
+                animation: use 0.5s ease-out;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .exp-glow {
+                box-shadow: 0 0 15px rgba(16, 185, 129, 0.5);
+            }
+            .btn-disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+                transform: none !important;
+            }
+            .btn-ready {
+                animation: pulse 1.5s infinite;
+            }
+            .scene-locked {
+                filter: grayscale(100%);
+                opacity: 0.5;
+            }
+            .scene-active {
+                border: 2px solid #F59E0B;
+                transform: scale(1.05);
+            }
+            .potion-common {
+                border: 2px solid #10B981;
+            }
+            .potion-rare {
+                border: 2px solid #D97706;
+                box-shadow: 0 0 10px rgba(217, 119, 6, 0.5);
+            }
+            .potion-epic {
+                border: 2px solid #8B5CF6;
+                box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+            }
+            .potion-legend {
+                border: 2px solid #EC4899;
+                box-shadow: 0 0 20px rgba(236, 72, 153, 0.7);
+            }
+            .potion-mythic {
+                border: 2px solid #06B6D4;
+                box-shadow: 0 0 25px rgba(6, 182, 212, 0.8);
+            }
+            .potion-celestial {
+                border: 2px solid #F472B6;
+                box-shadow: 0 0 30px rgba(244, 114, 182, 0.9);
+            }
+            /* 新增丹药样式 */
+            .potion-ancient {
+                border: 2px solid #808080;
+                box-shadow: 0 0 20px rgba(128, 128, 128, 0.7);
+            }
+            .potion-dragon {
+                border: 2px solid #FF4500;
+                box-shadow: 0 0 25px rgba(255, 69, 0, 0.8);
+            }
+            .potion-phoenix {
+                border: 2px solid #FF69B4;
+                box-shadow: 0 0 25px rgba(255, 105, 180, 0.8);
+            }
+            .potion-void {
+                border: 2px solid #4B0082;
+                box-shadow: 0 0 30px rgba(75, 0, 130, 0.9);
+            }
+            .tooltip {
+                position: relative;
+            }
+            .tooltip:hover::after {
+                content: attr(data-tooltip);
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: rgba(15, 23, 42, 0.9);
+                color: white;
+                padding: 4px 8px;
+                border-radius: 4px;
+                font-size: 12px;
+                white-space: nowrap;
+                z-index: 50;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            }
+            .tooltip:hover::before {
+                content: '';
+                position: absolute;
+                bottom: 100%;
+                left: 50%;
+                transform: translateX(-50%);
+                border-width: 5px;
+                border-style: solid;
+                border-color: rgba(15, 23, 42, 0.9) transparent transparent transparent;
+                z-index: 50;
+            }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes levelUp {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes upgrade {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        
+        @keyframes sceneChange {
+            0% { opacity: 0.5; transform: scale(0.95); }
+            50% { opacity: 1; transform: scale(1.05); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        
+        @keyframes drop {
+            0% { transform: translateY(-20px) scale(0.8); opacity: 0; }
+            60% { transform: translateY(5px) scale(1.1); }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        
+        @keyframes use {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2) rotate(10deg); opacity: 0.8; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+    </style>
+    
+    <!-- 引入游戏风格字体 -->
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-gradient-to-br from-dark to-slate-800 min-h-screen text-light flex flex-col items-center justify-center p-4 font-sans transition-all duration-1000" id="game-body">
+    <!-- 游戏标题 -->
+    <header class="mb-8 text-center">
+        <h1 class="text-[clamp(1.8rem,5vw,3rem)] font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-purple-400 mb-2 tracking-wide">
+            挂机成长冒险
+        </h1>
+        <p class="text-slate-300 text-lg">升级、成长、探索新场景！</p>
+    </header>
+    
+    <!-- 主游戏面板 -->
+    <main class="w-full max-w-6xl">
+        <!-- 玩家信息卡片 -->
+        <div class="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden border border-slate-700 transition-all duration-300 hover:shadow-primary/30 mb-8">
+            <!-- 头像区域 -->
+            <div class="relative py-8 px-6 flex flex-col items-center">
+                <!-- 头像框 -->
+                <div class="relative mb-6 animate-float">
+                    <div class="w-40 h-40 md:w-56 md:h-56 rounded-full border-4 border-primary/80 overflow-hidden shadow-lg">
+                        <img src="https://picsum.photos/seed/avatar/200/200" alt="玩家卡通头像" class="w-full h-full object-cover">
+                    </div>
+                    <!-- 等级徽章 -->
+                    <div id="level-badge" class="absolute -bottom-3 -right-3 bg-accent text-dark font-bold rounded-full w-14 h-14 flex items-center justify-center text-xl shadow-lg border-2 border-slate-800">
+                        1
+                    </div>
+                </div>
+                
+                <!-- 当前场景和倍率 -->
+                <div class="mb-4 bg-slate-700/50 px-4 py-2 rounded-full text-sm">
+                    <span>当前场景: </span>
+                    <span id="current-scene" class="font-medium text-accent">宁静森林</span>
+                    <span class="mx-2">|</span>
+                    <span>经验倍率: </span>
+                    <span id="exp-multiplier" class="font-medium text-secondary">1.0x</span>
+                </div>
+                
+                <!-- 玩家名称 -->
+                <h2 class="text-2xl font-bold mb-1 text-shadow">勇敢的冒险者</h2>
+                <p class="text-slate-400 text-sm mb-6">点击按钮获取经验，或等待自动增长</p>
+                
+                <!-- 经验条容器 -->
+                <div class="w-full bg-slate-700 rounded-full h-6 mb-2 overflow-hidden">
+                    <div id="exp-bar" class="bg-secondary h-full rounded-full w-0 transition-all duration-500 ease-out"></div>
+                </div>
+                
+                <!-- 经验信息 -->
+                <div class="w-full flex justify-between text-sm text-slate-300 mb-4">
+                    <span id="current-exp">0</span>
+                    <span id="exp-to-next">/ 100</span>
+                </div>
+                
+                <!-- 总经验显示 -->
+                <div class="w-full text-center mb-4">
+                    <span class="text-slate-400 text-sm">总经验: </span>
+                    <span id="total-exp" class="text-primary font-medium">0</span>
+                </div>
+                
+                <!-- 经验获取速率和点击获取量 -->
+                <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+                    <div class="text-auto flex items-center justify-center md:justify-start">
+                        <i class="fa fa-bolt mr-2 text-auto"></i>
+                        <span>每秒自动获得: <span id="exp-rate" class="text-auto font-medium">1</span> 经验</span>
+                    </div>
+                    <div class="text-click flex items-center justify-center md:justify-end">
+                        <i class="fa fa-mouse-pointer mr-2 text-click"></i>
+                        <span>每次点击获得: <span id="click-exp-amount" class="text-click font-medium">1</span> 经验</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作区域 -->
+            <div class="bg-slate-900/50 px-6 py-6">
+                <!-- 主要获取经验按钮 -->
+                <div class="flex justify-center mb-6">
+                    <button id="exp-button" class="bg-accent hover:bg-amber-500 text-dark font-bold py-3 px-8 rounded-full text-lg shadow-lg hover:shadow-accent/30 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 flex items-center">
+                        <i class="fa fa-plus-circle mr-2"></i>
+                        获取经验
+                    </button>
+                </div>
+                
+                <!-- 升级按钮区域 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- 升级自动获取经验按钮 -->
+                    <button id="upgrade-auto-button" class="bg-auto hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-xl text-md shadow-lg hover:shadow-auto/30 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center">
+                        <i class="fa fa-bolt mr-2"></i>
+                        <span>升级自动</span>
+                        <span class="ml-2 bg-dark/50 px-2 py-1 rounded text-xs">消耗: <span id="auto-upgrade-cost">10</span></span>
+                    </button>
+                    
+                    <!-- 玩家升级按钮 -->
+                    <button id="player-upgrade-button" class="bg-primary hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-xl text-md shadow-lg hover:shadow-primary/30 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center btn-disabled">
+                        <i class="fa fa-arrow-up mr-2"></i>
+                        <span>角色升级</span>
+                    </button>
+                    
+                    <!-- 升级点击获取经验按钮 -->
+                    <button id="upgrade-click-button" class="bg-click hover:bg-pink-500 text-white font-bold py-3 px-4 rounded-xl text-md shadow-lg hover:shadow-click/30 transition-all duration-300 transform hover:-translate-y-1 active:translate-y-0 flex items-center justify-center">
+                        <i class="fa fa-mouse-pointer mr-2"></i>
+                        <span>升级点击</span>
+                        <span class="ml-2 bg-dark/50 px-2 py-1 rounded text-xs">消耗: <span id="click-upgrade-cost">10</span></span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 场景和背包区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+            <!-- 场景切换区域 -->
+            <div class="lg:col-span-2 bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden border border-slate-700 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">探索场景 <span class="text-sm text-slate-400 font-normal">(每级解锁新场景)</span></h3>
+                    <div class="flex items-center">
+                        <button id="prev-scene" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-lg mr-2 transition-all">
+                            <i class="fa fa-chevron-left"></i>
+                        </button>
+                        <button id="next-scene" class="bg-slate-700 hover:bg-slate-600 p-2 rounded-lg transition-all">
+                            <i class="fa fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3" id="scenes-container">
+                    <!-- 场景按钮将通过JS动态生成 -->
+                </div>
+                
+                <div class="mt-4 text-center text-sm text-slate-400">
+                    <span>当前页: <span id="scene-page">1</span>/<span id="total-scene-pages">100</span></span>
+                </div>
+            </div>
+            
+            <!-- 背包系统 -->
+            <div class="bg-slate-800/80 backdrop-blur-sm rounded-2xl shadow-2xl shadow-primary/20 overflow-hidden border border-slate-700 p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-xl font-bold">背包 <span class="text-sm text-slate-400 font-normal">(丹药)</span></h3>
+                    <span class="bg-slate-700 px-3 py-1 rounded-full text-sm">
+                        <span id="potion-count">0</span>/<span id="max-potion-count">500</span>
+                    </span>
+                </div>
+                
+                <div class="mb-4 flex justify-between flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-secondary mr-2"></div>
+                        <span class="text-sm">普通丹药 (1.5x)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-rare mr-2"></div>
+                        <span class="text-sm">稀有丹药 (3x)</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4 flex justify-between flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-epic mr-2"></div>
+                        <span class="text-sm">史诗丹药 (5x)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-legend mr-2"></div>
+                        <span class="text-sm">传说丹药 (10x)</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4 flex justify-between flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-mythic mr-2"></div>
+                        <span class="text-sm">神话丹药 (20x)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-celestial mr-2"></div>
+                        <span class="text-sm">神圣丹药 (50x)</span>
+                    </div>
+                </div>
+                
+                <!-- 新增丹药类型 -->
+                <div class="mb-4 flex justify-between flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-ancient mr-2"></div>
+                        <span class="text-sm">远古丹药 (75x)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-dragon mr-2"></div>
+                        <span class="text-sm">龙血丹药 (100x)</span>
+                    </div>
+                </div>
+                
+                <div class="mb-4 flex justify-between flex-wrap gap-2">
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-phoenix mr-2"></div>
+                        <span class="text-sm">凤凰丹药 (150x)</span>
+                    </div>
+                    <div class="flex items-center">
+                        <div class="w-4 h-4 rounded-full bg-void mr-2"></div>
+                        <span class="text-sm">虚空丹药 (200x)</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-5 gap-2 max-h-[300px] overflow-y-auto pr-1" id="backpack-container">
+                    <!-- 背包格子将通过JS动态生成 -->
+                </div>
+                
+                <div class="mt-4 text-center text-xs text-slate-500">
+                    点击丹药使用，获得当前总经验倍数的经验
+                </div>
+            </div>
+        </div>
+        
+        <!-- 提示通知区域 -->
+        <div id="level-up-notification" class="fixed top-1/4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-primary to-purple-600 text-white text-center py-6 px-10 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-500 scale-90">
+            <h3 class="text-3xl font-bold mb-2">升级了！</h3>
+            <p class="text-xl">现在是 <span id="new-level">2</span> 级</p>
+        </div>
+        
+        <div id="upgrade-notification" class="fixed bottom-1/4 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-accent to-amber-500 text-dark text-center py-4 px-8 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-500 scale-90">
+            <p class="text-xl font-bold"><span id="upgrade-type">自动获取</span> 强化了！</p>
+        </div>
+        
+        <div id="scene-unlock-notification" class="fixed top-1/3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-accent to-purple-500 text-white text-center py-4 px-8 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-500 scale-90">
+            <p class="text-xl font-bold">新场景解锁：<span id="unlocked-scene">翠绿山谷</span></p>
+        </div>
+        
+        <div id="potion-drop-notification" class="fixed right-4 top-1/4 bg-gradient-to-r from-secondary to-primary text-white text-center py-3 px-6 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-500 transform translate-x-10">
+            <p class="text-lg font-bold">获得了 <span id="potion-name">初级活力丹</span>！</p>
+        </div>
+        
+        <div id="potion-use-notification" class="fixed center-4 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-epic to-legend text-white text-center py-4 px-8 rounded-xl shadow-2xl opacity-0 pointer-events-none transition-all duration-700 scale-90">
+            <p class="text-xl font-bold">使用了 <span id="used-potion-name">初级活力丹</span></p>
+            <p class="text-2xl font-bold mt-2">获得 <span id="potion-exp-gain">+100</span> 经验！</p>
+        </div>
+        
+        <!-- 点击获得经验的浮动文字 -->
+        <div id="floating-exp-container" class="pointer-events-none fixed inset-0 overflow-hidden"></div>
+        
+        <!-- 音频元素 - 用于播放场景BGM -->
+        <audio id="bgm" loop>
+            <source src="" type="audio/mpeg">
+        </audio>
+    </main>
+    
+    <!-- 页脚 -->
+    <footer class="mt-12 text-slate-500 text-sm">
+        <p>挂机成长游戏 &copy; 2023</p>
+    </footer>
+
+    <script>
+        // 生成1000个场景名称，等级越高名称越炫酷
+        function generateSceneNames() {
+            // 场景修饰词，按等级提升从普通到炫酷
+            const adjectives = [
+                // 基础(1-100)
+                ["宁静", "翠绿", "阳光", "清澈", "小小", "野花", "橡木", "浅滩", "青石", "低矮",
+                 "芦苇", "岩石", "竹林", "落叶", "蘑菇", "青苔", "灌木", "浆果", "砂岩", "浅水",
+                 "开阔", "平缓", "稀疏", "干燥", "湿润", "安静", "温暖", "清凉", "简朴", "寻常",
+                 "微风", "晨曦", "黄昏", "月光", "星光", "薄雾", "细雨", "轻雪", "绿茵", "黄土",
+                 "红土", "黑石", "白石", "灰石", "沙丘", "草坡", "树丛", "花田", "溪谷", "河岸",
+                 "湖畔", "泉边", "洞穴", "山谷", "山坡", "平原", "森林", "草地", "田野", "荒原",
+                 "沼泽", "湿地", "沙漠", "戈壁", "山地", "高原", "丘陵", "盆地", "峡谷", "海峡",
+                 "岛屿", "半岛", "海湾", "海峡", "河口", "三角洲", "瀑布", "溪流", "湖泊", "河流",
+                 "冰川", "雪峰", "火山", "温泉", "森林", "丛林", "雨林", "针叶林", "阔叶林", "灌木林"],
+                
+                // 中级(101-300)
+                ["迷雾", "深邃", "月光", "瀑布", "回音", "荆棘", "古老", "幽暗", "红岩", "风蚀",
+                 "水晶", "火山", "冰川", "茂密", "沙漠", "风暴", "黑曜", "魔法", "巨树", "神秘",
+                 "幽暗", "险峻", "蜿蜒", "湍急", "茂密", "古老", "神秘", "诡异", "危险", "崎岖",
+                 "冰封", "火焰", "雷电", "风暴", "剧毒", "诅咒", "祝福", "神圣", "邪恶", "亡灵",
+                 "妖精", "巨人", "龙族", "魔族", "天使", "精灵", "矮人", "兽人", "狼人", "吸血鬼",
+                 "幽灵", "幻影", "梦境", "现实", "过去", "未来", "时间", "空间", "维度", "平行",
+                 "扭曲", "破碎", "完整", "和谐", "混乱", "有序", "平衡", "极端", "光明", "黑暗",
+                 "白昼", "黑夜", "星辰", "宇宙", "银河", "星云", "黑洞", "白洞", "行星", "恒星",
+                 "卫星", "彗星", "流星", "陨石", "极光", "彩虹", "海市蜃楼", "幻境", "真实", "虚拟",
+                 "数字", "量子", "分子", "原子", "粒子", "能量", "物质", "反物质", "真空", "以太",
+                 "元素", "五行", "阴阳", "太极", "八卦", "四象", "三才", "两仪", "一元", "混沌",
+                 "起源", "终结", "开始", "结束", "生", "死", "轮回", "转世", "永恒", "瞬间"],
+                
+                // 高级(301-600)
+                ["暗影", "深渊", "炼狱", "天堂", "星辰", "虚空", "远古", "未来", "时空", "维度",
+                 "混沌", "秩序", "神圣", "亵渎", "毁灭", "创造", "生命", "死亡", "永恒", "瞬间",
+                 "无限", "有限", "绝对", "相对", "真实", "虚幻", "现实", "梦境", "意识", "物质",
+                 "能量", "虚无", "存在", "不存在", "可能", "不可能", "必然", "偶然", "确定", "随机",
+                 "因果", "命运", "自由", "束缚", "解放", "囚禁", "光明", "黑暗", "白昼", "黑夜",
+                 "火焰", "冰霜", "雷电", "风暴", "大地", "海洋", "天空", "宇宙", "星系", "星云",
+                 "黑洞", "超新星", "量子", "纳米", "微观", "宏观", "超维", "多维", "平面", "立体",
+                 "线性", "非线性", "循环", "螺旋", "放射", "聚合", "分散", "集中", "扩散", "凝聚",
+                 "溶解", "结晶", "升华", "凝华", "燃烧", "熄灭", "生长", "枯萎", "进化", "退化",
+                 "诞生", "消亡", "繁荣", "衰败", "战争", "和平", "爱", "恨", "喜", "悲", "怒", "乐",
+                 "智慧", "愚昧", "力量", "软弱", "速度", "缓慢", "敏捷", "迟钝", "美丽", "丑陋",
+                 "善良", "邪恶", "正义", "邪恶", "真实", "谎言", "真理", "谬误", "知识", "无知",
+                 "信仰", "怀疑", "希望", "绝望", "勇气", "恐惧", "成功", "失败", "胜利", "失败"],
+                
+                // 终极(601-1000)
+                ["终焉", "起源", "至高", "永恒", "无限", "混沌", "秩序", "创世", "灭世", "超维",
+                 "元初", "末法", "太初", "终极", "本源", "本质", "核心", "外围", "内在", "外在",
+                 "绝对", "终极", "无上", "至尊", "超凡", "脱俗", "神圣", "凡俗", "不朽", "腐朽",
+                 "不灭", "易逝", "永恒", "瞬息", "无限", "有限", "无穷", "有尽", "全能", "无能",
+                 "全知", "无知", "全在", "不在", "真实", "虚幻", "实在", "虚无", "存在", "不存在",
+                 "可能", "不可能", "必然", "偶然", "确定", "不确定", "因果", "无因", "有果", "无果",
+                 "命运", "自由", "注定", "随机", "时间", "空间", "时空", "维度", "维度外", "现实",
+                 "梦境", "意识", "潜意识", "超意识", "物质", "能量", "信息", "精神", "灵魂", "肉体",
+                 "生命", "死亡", "生灭", "轮回", "涅槃", "毁灭", "创造", "转化", "维持", "平衡",
+                 "极端", "中和", "单一", "多元", "统一", "分裂", "整体", "部分", "宏观", "微观",
+                 "宇宙", "超宇宙", "宇宙外", "虚无界", "实存界", "幻想界", "理念界", "现象界", "本质界",
+                 "表象界", "真理界", "谬误界", "光明界", "黑暗界", "混沌界", "秩序界", "生命界", "死亡界",
+                 "永恒界", "瞬息界", "无限界", "有限界", "全能界", "无能界", "全知界", "无知界", "绝对界", "相对界"]
+            ];
+            
+            // 场景主体，按等级提升从普通到炫酷
+            const nouns = [
+                // 基础(1-100)
+                ["森林", "山谷", "草坪", "溪流", "洞穴", "平原", "林地", "湖畔", "小径", "丘陵",
+                 "沼泽", "浅滩", "边缘", "林间", "草地", "石坡", "灌木", "丛林", "峡谷", "池塘",
+                 "田野", "荒原", "沙漠", "戈壁", "山地", "高原", "盆地", "海峡", "岛屿", "半岛",
+                 "海湾", "河口", "瀑布", "湖泊", "河流", "冰川", "雪峰", "火山", "温泉", "丛林",
+                 "雨林", "针叶林", "阔叶林", "灌木林", "树丛", "花田", "溪谷", "河岸", "泉边", "山坡"],
+                
+                // 中级(101-300)
+                ["秘境", "领域", "禁地", "圣地", "魔窟", "神殿", "废墟", "遗迹", "古城", "堡垒",
+                 "要塞", "宫殿", "庙宇", "祭坛", "墓地", "陵园", "战场", "竞技场", "试炼地", "迷宫",
+                 "幻境", "梦境", "现实", "过去", "未来", "时间流", "空间裂隙", "维度夹缝", "平行世界",
+                 "扭曲空间", "破碎领域", "完整世界", "和谐之地", "混乱之域", "有序空间", "平衡领域",
+                 "极端之地", "光明领域", "黑暗之域", "白昼空间", "黑夜领域", "星辰大海", "宇宙空间",
+                 "银河领域", "星云地带", "黑洞边缘", "白洞附近", "行星表面", "恒星周围", "卫星轨道",
+                 "彗星轨迹", "流星雨中", "陨石地带", "极光之下", "彩虹之上", "海市蜃楼", "幻境空间",
+                 "真实世界", "虚拟空间", "数字世界", "量子领域", "分子世界", "原子空间", "粒子海洋",
+                 "能量风暴", "物质世界", "反物质空间", "真空地带", "以太领域", "元素空间", "五行之地",
+                 "阴阳界", "太极领域", "八卦空间", "四象之地", "三才领域", "两仪空间", "一元世界", "混沌之地"],
+                
+                // 高级(301-600)
+                ["神域", "魔境", "天界", "地狱", "冥界", "仙界", "佛国", "妖域", "鬼界", "修罗场",
+                 "天堂", "炼狱", "净土", "秽土", "圣境", "邪域", "光明界", "黑暗界", "白昼域", "黑夜界",
+                 "时空长河", "维度枢纽", "宇宙核心", "星系中心", "星云核心", "黑洞内部", "超新星爆发区",
+                 "量子泡沫", "纳米世界", "微观宇宙", "宏观粒子", "超维空间", "多维宇宙", "平面世界",
+                 "立体空间", "线性时间", "非线性空间", "循环世界", "螺旋星系", "放射星云", "聚合物质",
+                 "分散能量", "集中意识", "扩散信息", "凝聚灵魂", "溶解肉体", "结晶能量", "升华精神",
+                 "凝华物质", "燃烧生命", "熄灭死亡", "生长世界", "枯萎领域", "进化空间", "退化世界",
+                 "诞生之地", "消亡之域", "繁荣世界", "衰败领域", "战争之地", "和平之域", "爱之世界",
+                 "恨之领域", "喜之空间", "悲之世界", "怒之领域", "乐之空间"],
+                
+                // 终极(601-1000)
+                ["本源界", "本质域", "核心世界", "外围空间", "内在领域", "外在世界", "绝对空间",
+                 "终极领域", "无上世界", "至尊领域", "超凡空间", "脱俗世界", "神圣领域", "凡俗空间",
+                 "不朽世界", "腐朽领域", "不灭空间", "易逝世界", "永恒领域", "瞬息空间", "无限世界",
+                 "有限领域", "无穷空间", "有尽世界", "全能领域", "无能空间", "全知世界", "无知领域",
+                 "全在空间", "不在世界", "真实领域", "虚幻空间", "实在世界", "虚无领域", "存在空间",
+                 "不存在世界", "可能领域", "不可能空间", "必然世界", "偶然领域", "确定空间", "不确定世界",
+                 "因果领域", "无因空间", "有果世界", "无果领域", "命运空间", "自由世界", "注定领域",
+                 "随机空间", "时间本源", "空间本质", "时空枢纽", "维度核心", "维度外空间", "现实本源",
+                 "梦境本质", "意识核心", "潜意识空间", "超意识领域", "物质本源", "能量本质", "信息核心",
+                 "精神本源", "灵魂本质", "肉体本源", "生命核心", "死亡本质", "生灭领域", "轮回空间",
+                 "涅槃领域", "毁灭核心", "创造本源", "转化领域", "维持空间", "平衡核心"]
+            ];
+            
+            const sceneNames = [];
+            
+            // 生成1000个场景名称
+            for (let i = 0; i < 1000; i++) {
+                // 根据等级选择不同级别的形容词和名词
+                let adjGroup, nounGroup;
+                if (i < 100) {
+                    adjGroup = 0;
+                    nounGroup = 0;
+                } else if (i < 300) {
+                    adjGroup = 1;
+                    nounGroup = 1;
+                } else if (i < 600) {
+                    adjGroup = 2;
+                    nounGroup = 2;
+                } else {
+                    adjGroup = 3;
+                    nounGroup = 3;
+                }
+                
+                // 随机选择形容词和名词组合
+                const adjIndex = Math.floor(Math.random() * adjectives[adjGroup].length);
+                const nounIndex = Math.floor(Math.random() * nouns[nounGroup].length);
+                
+                // 确保不会有重复的场景名称
+                let name = `${adjectives[adjGroup][adjIndex]}${nouns[nounGroup][nounIndex]}`;
+                while (sceneNames.includes(name)) {
+                    const adjIndex = Math.floor(Math.random() * adjectives[adjGroup].length);
+                    const nounIndex = Math.floor(Math.random() * nouns[nounGroup].length);
+                    name = `${adjectives[adjGroup][adjIndex]}${nouns[nounGroup][nounIndex]}`;
+                }
+                
+                sceneNames.push(name);
+            }
+            
+            return sceneNames;
+        }
+        
+        // 生成1000种丹药名称、图标和介绍
+        function generatePotionData() {
+            // 丹药前缀 (按品质从低到高)
+            const prefixes = {
+                common: ["初级", "简易", "普通", "基础", "新手", "劣质", "平凡", "常见", "日常", "标准",
+                         "基础", "普通", "一般", "常见", "寻常", "简单", "朴素", "基本", "常规", "通用"],
+                rare: ["中级", "优质", "罕见", "精良", "稀有", "高级", "强化", "非凡", "卓越", "珍稀",
+                       "精致", "高级", "优秀", "出色", "不凡", "特殊", "罕见", "稀有", "少见", "难得"],
+                epic: ["特级", "史诗", "传说", "神圣", "魔法", "神秘", "古老", "上古", "超凡", "传奇",
+                       "顶级", "终极", "极致", "完美", "超凡", "神圣", "神秘", "魔幻", "奇幻", "奇迹"],
+                legend: ["神话", "永恒", "至高", "本源", "混沌", "秩序", "宇宙", "无限", "创世", "灭世",
+                         "不朽", "不灭", "永恒", "无限", "无尽", "绝对", "至高", "至上", "终极", "顶点"],
+                mythic: ["鸿蒙", "太虚", "太极", "无极", "混沌", "本源", "元初", "太初", "先天", "后天",
+                         "鸿蒙", "混沌", "元气", "元神", "元灵", "元素", "元初", "元始", "元化", "元极"],
+                celestial: ["天道", "神道", "圣道", "王道", "霸道", "仙道", "佛道", "魔道", "妖道", "鬼道",
+                            "天道", "神道", "圣道", "王道", "大道", "天道", "地道", "人道", "神道", "魔道"],
+                ancient: ["远古", "太古", "上古", "洪荒", "史前", "亘古", "太初", "元初", "原始", "先民",
+                          "先民", "古神", "旧神", "先民", "先祖", "长老", "智者", "先知", "圣贤", "先哲"],
+                dragon: ["赤龙", "青龙", "黄龙", "黑龙", "白龙", "金龙", "冰龙", "火龙", "雷龙", "风龙",
+                         "古龙", "神龙", "圣龙", "巨龙", "古龙", "天龙", "海龙", "地龙", "翔龙", "蟠龙"],
+                phoenix: ["火凤", "冰凰", "雷凤", "光凰", "暗凤", "金凰", "彩凤", "灵凰", "神凤", "圣凰",
+                          "天凤", "仙凰", "玄凤", "真凰", "彩凤", "瑞凤", "祥凰", "火凰", "涅槃", "重生"],
+                void: ["虚空", "虚无", "混沌", "黑洞", "星界", "深渊", "幽冥", "暗影", "暗物质", "负能量",
+                       "虚空", "混沌", "虚无", "黑洞", "星界", "深渊", "幽冥", "暗影", "暗物质", "负能量"]
+            };
+            
+            // 丹药后缀
+            const suffixes = ["活力丹", "经验丹", "智慧丸", "力量剂", "敏捷液", "耐力膏", "精神散", "生命露", 
+                             "魔力剂", "能量丸", "元气丹", "真气丹", "灵气丹", "神气丹", "斗气丹", "血气丹",
+                             "魂丹", "灵丹", "仙丹", "神丹", "魔丹", "妖丹", "鬼丹", "道丹", "佛丹", "圣丹",
+                             "元丹", "金丹", "内丹", "外丹", "仙丹", "灵丹", "妙丹", "宝丹", "奇丹", "幻丹",
+                             "虚丹", "实丹", "真丹", "假丹", "空丹", "有丹", "无丹", "明丹", "暗丹", "光丹",
+                             "灵丹", "幽丹", "冥丹", "魂丹", "魄丹", "精丹", "气丹", "神丹", "金丹", "玉丹"];
+            
+            // 丹药图标 - 使用Font Awesome不同图标表示不同外形
+            const potionIcons = [
+                "fa-flask", "fa-bottle", "fa-pills", "fa-capsules", "fa-diamond", "fa-cube", 
+                "fa-crystal-ball", "fa-gem", "fa-heart", "fa-star", "fa-moon-o", "fa-sun-o",
+                "fa-bolt", "fa-fire", "fa-tint", "fa-leaf", "fa-bomb", "fa-bullseye", "fa-dot-circle-o",
+                "fa-circle", "fa-square", "fa-triangle", "fa-star-o", "fa-heart-o", "fa-diamond-o",
+                "fa-shield", "fa-shield-alt", "fa-anchor", "fa-ankh", "fa-snowflake-o", "fa-bolt",
+                "fa-bomb", "fa-bullseye", "fa-dot-circle-o", "fa-moon-o", "fa-sun-o", "fa-star-half-o"
+            ];
+            
+            // 丹药介绍 - 按类型区分
+            const descriptions = {
+                common: [
+                    "蕴含基础生命能量，能小幅提升经验获取",
+                    "初学者常用的丹药，能提供少量额外经验",
+                    "简单炼制的丹药，适合新手使用",
+                    "蕴含微弱的自然之力，能加速经验积累",
+                    "基础配方炼制，效果稳定但不显著"
+                ],
+                rare: [
+                    "经过特殊工艺炼制，能显著提升经验获取",
+                    "蕴含浓缩的生命精华，使用后经验倍增",
+                    "在特殊环境下生长的草药炼制而成",
+                    "蕴含元素之力，能大幅提升修炼效率",
+                    "由大师精心炼制，效果远超普通丹药"
+                ],
+                epic: [
+                    "蕴含古老魔法的丹药，能极大提升经验获取",
+                    "传说中由古代魔法师研制的配方",
+                    "蕴含天地灵气，使用后修为大增",
+                    "采用稀有材料炼制，效果非凡",
+                    "能短暂突破修炼瓶颈，快速积累经验"
+                ],
+                legend: [
+                    "只存在于传说中的神丹，效果惊天动地",
+                    "由上古神祇遗留的配方炼制而成",
+                    "蕴含法则之力，能瞬间提升大量经验",
+                    "服用后可领悟天地至理，快速成长",
+                    "传说中能让人脱胎换骨的神奇丹药"
+                ],
+                mythic: [
+                    "神话级别的丹药，蕴含创世之力",
+                    "由神话生物的精华炼制而成",
+                    "能打破常规，实现跨越式成长",
+                    "蕴含时间之力，可加速经验积累",
+                    "传说中只有神明才能炼制的丹药"
+                ],
+                celestial: [
+                    "神圣丹药，蕴含神圣光辉与无尽能量",
+                    "由天使的眼泪与星辰碎片炼制而成",
+                    "能净化身心，实现超常规成长",
+                    "蕴含神圣法则，可获得海量经验",
+                    "只有达到圣境才能炼制的绝世丹药"
+                ],
+                ancient: [
+                    "远古时期遗留的丹药，蕴含洪荒之力",
+                    "由史前文明的智慧结晶炼制而成",
+                    "蕴含古老法则，能唤醒沉睡的潜能",
+                    "服用后可获得远古传承，经验暴增",
+                    "远古先民留下的神秘丹药，效果莫测"
+                ],
+                dragon: [
+                    "以神龙之血为引炼制的无上丹药",
+                    "蕴含龙之威，能大幅激发潜能",
+                    "服用后可获得龙之力量，经验暴涨",
+                    "传说中能让人化身为龙的神奇丹药",
+                    "汇聚四海龙族精华炼制而成的至宝"
+                ],
+                phoenix: [
+                    "以凤凰涅槃之火炼制的不灭丹药",
+                    "蕴含重生之力，能突破极限",
+                    "服用后可获得凤凰的生命力，经验暴增",
+                    "传说中能让人获得涅槃能力的神丹",
+                    "汇聚百鸟之王精华炼制而成的仙丹"
+                ],
+                void: [
+                    "以虚空能量炼制的神秘丹药，效果未知",
+                    "蕴含混沌之力，能吞噬一切转化为经验",
+                    "来自宇宙边缘的神秘丹药，蕴含无尽能量",
+                    "能打开虚空通道，吸收无尽经验",
+                    "由黑洞核心物质炼制的禁忌丹药"
+                ]
+            };
+            
+            const potions = {
+                common: [],
+                rare: [],
+                epic: [],
+                legend: [],
+                mythic: [],
+                celestial: [],
+                ancient: [],
+                dragon: [],
+                phoenix: [],
+                void: []
+            };
+            
+            // 每种品质生成约100种丹药（1000/10=100）
+            const counts = {
+                common: 100,
+                rare: 100,
+                epic: 100,
+                legend: 100,
+                mythic: 100,
+                celestial: 100,
+                ancient: 100,
+                dragon: 100,
+                phoenix: 100,
+                void: 100
+            };
+            
+            for (const [quality, count] of Object.entries(counts)) {
+                for (let i = 0; i < count; i++) {
+                    const pIndex = i % prefixes[quality].length;
+                    const sIndex = Math.floor(i / prefixes[quality].length) % suffixes.length;
+                    const iconIndex = i % potionIcons.length;
+                    const descIndex = i % descriptions[quality].length;
+                    
+                    // 确定倍率，品质越高倍率越高
+                    let multiplier;
+                    switch(quality) {
+                        case 'common': multiplier = 1.5; break;
+                        case 'rare': multiplier = 3; break;
+                        case 'epic': multiplier = 5; break;
+                        case 'legend': multiplier = 10; break;
+                        case 'mythic': multiplier = 20; break;
+                        case 'celestial': multiplier = 50; break;
+                        case 'ancient': multiplier = 75; break;
+                        case 'dragon': multiplier = 100; break;
+                        case 'phoenix': multiplier = 150; break;
+                        case 'void': multiplier = 200; break;
+                    }
+                    
+                    potions[quality].push({
+                        name: `${prefixes[quality][pIndex]}${suffixes[sIndex]}`,
+                        icon: potionIcons[iconIndex],
+                        multiplier: multiplier,
+                        description: descriptions[quality][descIndex]
+                    });
+                }
+            }
+            
+            return potions;
+        }
+        
+        // 生成1000个场景数据 - 每级解锁，经验倍率从1到2逐步增长
+        function generateScenes() {
+            const scenes = [];
+            const sceneNames = generateSceneNames();
+            
+            // 定义更多背景色循环使用
+            const backgrounds = [
+                "from-green-900 to-emerald-900", "from-emerald-800 to-teal-900", 
+                "from-stone-800 to-slate-700", "from-zinc-800 to-gray-900",
+                "from-amber-700 to-orange-800", "from-emerald-900 to-teal-800",
+                "from-blue-500 to-sky-700", "from-red-800 to-orange-900",
+                "from-zinc-700 to-gray-800", "from-purple-900 to-indigo-800",
+                "from-pink-700 to-rose-800", "from-cyan-800 to-blue-900",
+                "from-violet-800 to-purple-900", "from-fuchsia-800 to-pink-900",
+                "from-rose-800 to-red-900", "from-orange-800 to-amber-900",
+                "from-lime-800 to-green-900", "from-emerald-800 to-cyan-900",
+                "from-blue-800 to-indigo-900", "from-indigo-800 to-violet-900"
+            ];
+            
+            // 场景BGM - 使用不同风格的音乐
+            const bgmTypes = [
+                "forest", "mountain", "ocean", "desert", "night", 
+                "ancient", "mystic", "battle", "peaceful", "epic"
+            ];
+            
+            for (let i = 1; i <= 1000; i++) {
+                // 倍率计算公式：从1到2线性增长，1000级达到2倍
+                const multiplier = parseFloat((1 + (i - 1) * 1).toFixed(3));
+                const bgIndex = (i - 1) % backgrounds.length;
+                const bgmIndex = Math.floor(i / 100) % bgmTypes.length;
+                
+                scenes.push({
+                    id: i,
+                    name: sceneNames[i-1],  // 使用生成的场景名称
+                    level: i,  // 每级解锁一个新场景
+                    multiplier: multiplier,
+                    bg: backgrounds[bgIndex],
+                    bgm: bgmTypes[bgmIndex], // 场景BGM类型
+                    // 根据场景等级确定可能掉落的丹药类型和概率
+                    potionChances: getPotionChancesForScene(i)
+                });
+            }
+            return scenes;
+        }
+        
+        // 根据场景等级确定丹药掉落概率
+        function getPotionChancesForScene(sceneLevel) {
+            // 场景等级越高，高等级丹药概率越高，但总体掉落概率越低
+            let baseChance = Math.max(20 - (sceneLevel - 1) * 0.015, 5); // 5%-20%基础概率
+            
+            if (sceneLevel < 100) {
+                return {
+                    common: baseChance * 0.9,   // 普通丹药概率高
+                    rare: baseChance * 0.1,     // 稀有丹药概率低
+                    epic: 0,                    // 无史诗丹药
+                    legend: 0,                  // 无传说丹药
+                    mythic: 0,                  // 无神话丹药
+                    celestial: 0,               // 无神圣丹药
+                    ancient: 0,                 // 无远古丹药
+                    dragon: 0,                  // 无龙血丹药
+                    phoenix: 0,                 // 无凤凰丹药
+                    void: 0                     // 无虚空丹药
+                };
+            } else if (sceneLevel < 200) {
+                return {
+                    common: baseChance * 0.7,
+                    rare: baseChance * 0.3,
+                    epic: 0,
+                    legend: 0,
+                    mythic: 0,
+                    celestial: 0,
+                    ancient: 0,
+                    dragon: 0,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 300) {
+                return {
+                    common: baseChance * 0.5,
+                    rare: baseChance * 0.3,
+                    epic: baseChance * 0.2,
+                    legend: 0,
+                    mythic: 0,
+                    celestial: 0,
+                    ancient: 0,
+                    dragon: 0,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 400) {
+                return {
+                    common: baseChance * 0.3,
+                    rare: baseChance * 0.3,
+                    epic: baseChance * 0.3,
+                    legend: baseChance * 0.1,
+                    mythic: 0,
+                    celestial: 0,
+                    ancient: 0,
+                    dragon: 0,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 500) {
+                return {
+                    common: baseChance * 0.2,
+                    rare: baseChance * 0.2,
+                    epic: baseChance * 0.3,
+                    legend: baseChance * 0.2,
+                    mythic: baseChance * 0.1,
+                    celestial: 0,
+                    ancient: 0,
+                    dragon: 0,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 600) {
+                return {
+                    common: baseChance * 0.1,
+                    rare: baseChance * 0.1,
+                    epic: baseChance * 0.2,
+                    legend: baseChance * 0.2,
+                    mythic: baseChance * 0.3,
+                    celestial: baseChance * 0.1,
+                    ancient: 0,
+                    dragon: 0,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 700) {
+                return {
+                    common: baseChance * 0.05,
+                    rare: baseChance * 0.05,
+                    epic: baseChance * 0.1,
+                    legend: baseChance * 0.2,
+                    mythic: baseChance * 0.2,
+                    celestial: baseChance * 0.2,
+                    ancient: baseChance * 0.1,
+                    dragon: 0,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 800) {
+                return {
+                    common: 0,
+                    rare: baseChance * 0.05,
+                    epic: baseChance * 0.05,
+                    legend: baseChance * 0.1,
+                    mythic: baseChance * 0.2,
+                    celestial: baseChance * 0.2,
+                    ancient: baseChance * 0.2,
+                    dragon: baseChance * 0.1,
+                    phoenix: 0,
+                    void: 0
+                };
+            } else if (sceneLevel < 900) {
+                return {
+                    common: 0,
+                    rare: 0,
+                    epic: baseChance * 0.05,
+                    legend: baseChance * 0.05,
+                    mythic: baseChance * 0.1,
+                    celestial: baseChance * 0.2,
+                    ancient: baseChance * 0.2,
+                    dragon: baseChance * 0.2,
+                    phoenix: baseChance * 0.1,
+                    void: 0.05
+                };
+            } else {
+                return {
+                    common: 0,
+                    rare: 0,
+                    epic: 0,
+                    legend: baseChance * 0.05,
+                    mythic: baseChance * 0.05,
+                    celestial: baseChance * 0.1,
+                    ancient: baseChance * 0.2,
+                    dragon: baseChance * 0.2,
+                    phoenix: baseChance * 0.2,
+                    void: baseChance * 0.2
+                };
+            }
+        }
+        
+        // 生成1000种丹药数据
+        const potionData = generatePotionData();
+        
+        // 生成500个背包格子，支持相同类型丹药叠加
+        function generateBackpackSlots() {
+            // 使用对象数组存储，每个元素包含一种丹药和数量
+            return [];
+        }
+        
+        // 场景数据
+        const scenes = generateScenes();
+        
+        // 游戏状态
+        const gameState = {
+            level: 1,
+            currentExp: 0,
+            totalExp: 0, // 总经验
+            expToNext: 100, // 升级所需经验（100倍增长）
+            baseExpRate: 1, // 基础每秒自动获得经验
+            baseClickExpAmount: 1, // 基础每次点击获得经验
+            expRate: 1, // 实际每秒自动获得经验（基础值×倍率）
+            clickExpAmount: 1, // 实际每次点击获得经验（基础值×倍率）
+            autoUpgradeCost: 10, // 自动升级消耗
+            clickUpgradeCost: 10, // 点击升级消耗
+            isAutoGaining: true, // 是否自动获取经验
+            currentScene: 0, // 当前场景索引
+            expMultiplier: 1.0, // 当前经验倍率
+            currentScenePage: 1, // 当前场景页码（每页10个场景）
+            backpack: generateBackpackSlots(), // 背包物品（支持叠加）
+            bgmVolume: 0.5 // BGM音量
+        };
+        
+        // DOM元素
+        const elements = {
+            levelBadge: document.getElementById('level-badge'),
+            expBar: document.getElementById('exp-bar'),
+            currentExp: document.getElementById('current-exp'),
+            totalExp: document.getElementById('total-exp'),
+            expToNext: document.getElementById('exp-to-next'),
+            expRate: document.getElementById('exp-rate'),
+            clickExpAmount: document.getElementById('click-exp-amount'),
+            expButton: document.getElementById('exp-button'),
+            upgradeAutoButton: document.getElementById('upgrade-auto-button'),
+            upgradeClickButton: document.getElementById('upgrade-click-button'),
+            playerUpgradeButton: document.getElementById('player-upgrade-button'),
+            autoUpgradeCost: document.getElementById('auto-upgrade-cost'),
+            clickUpgradeCost: document.getElementById('click-upgrade-cost'),
+            levelUpNotification: document.getElementById('level-up-notification'),
+            newLevelText: document.getElementById('new-level'),
+            upgradeNotification: document.getElementById('upgrade-notification'),
+            upgradeType: document.getElementById('upgrade-type'),
+            floatingExpContainer: document.getElementById('floating-exp-container'),
+            scenesContainer: document.getElementById('scenes-container'),
+            currentScene: document.getElementById('current-scene'),
+            expMultiplier: document.getElementById('exp-multiplier'),
+            sceneUnlockNotification: document.getElementById('scene-unlock-notification'),
+            unlockedScene: document.getElementById('unlocked-scene'),
+            gameBody: document.getElementById('game-body'),
+            prevSceneBtn: document.getElementById('prev-scene'),
+            nextSceneBtn: document.getElementById('next-scene'),
+            scenePage: document.getElementById('scene-page'),
+            totalScenePages: document.getElementById('total-scene-pages'),
+            backpackContainer: document.getElementById('backpack-container'),
+            potionCount: document.getElementById('potion-count'),
+            maxPotionCount: document.getElementById('max-potion-count'),
+            potionDropNotification: document.getElementById('potion-drop-notification'),
+            potionName: document.getElementById('potion-name'),
+            potionUseNotification: document.getElementById('potion-use-notification'),
+            usedPotionName: document.getElementById('used-potion-name'),
+            potionExpGain: document.getElementById('potion-exp-gain'),
+            bgmElement: document.getElementById('bgm')
+        };
+        
+        // 初始化场景按钮（分页显示，每页10个）
+        function initScenes() {
+            const totalPages = Math.ceil(scenes.length / 10);
+            elements.totalScenePages.textContent = totalPages;
+            renderScenePage(gameState.currentScenePage);
+            
+            // 绑定场景翻页按钮事件
+            elements.prevSceneBtn.addEventListener('click', () => {
+                if (gameState.currentScenePage > 1) {
+                    gameState.currentScenePage--;
+                    renderScenePage(gameState.currentScenePage);
+                }
+            });
+            
+            elements.nextSceneBtn.addEventListener('click', () => {
+                if (gameState.currentScenePage < totalPages) {
+                    gameState.currentScenePage++;
+                    renderScenePage(gameState.currentScenePage);
+                }
+            });
+        }
+        
+        // 渲染指定页的场景按钮
+        function renderScenePage(page) {
+            elements.scenesContainer.innerHTML = '';
+            elements.scenePage.textContent = page;
+            
+            const startIndex = (page - 1) * 10;
+            const endIndex = Math.min(startIndex + 10, scenes.length);
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                const scene = scenes[i];
+                const sceneButton = document.createElement('button');
+                sceneButton.className = `scene-btn bg-slate-700 rounded-lg p-3 text-center transition-all duration-300 hover:bg-slate-600 ${i === gameState.currentScene ? 'scene-active' : ''}`;
+                sceneButton.innerHTML = `
+                    <div class="font-bold text-sm mb-1 truncate">${scene.name}</div>
+                    <div class="text-xs text-slate-400">${scene.multiplier}x</div>
+                    <div class="text-xs mt-1 text-slate-500">Lv.${scene.level}+</div>
+                `;
+                sceneButton.dataset.index = i;
+                
+                // 检查场景是否已解锁
+                if (gameState.level < scene.level) {
+                    sceneButton.classList.add('scene-locked');
+                    sceneButton.disabled = true;
+                    sceneButton.title = `需要${scene.level}级解锁`;
+                }
+                
+                sceneButton.addEventListener('click', () => {
+                    if (gameState.level >= scene.level && i !== gameState.currentScene) {
+                        changeScene(i);
+                    }
+                });
+                
+                elements.scenesContainer.appendChild(sceneButton);
+            }
+        }
+        
+        // 获取BGM URL（根据类型返回不同的音乐）
+        function getBgmUrl(type) {
+            // 使用不同的音乐作为不同类型场景的BGM
+            const bgmUrls = {
+                forest: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",
+                mountain: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",
+                ocean: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3",
+                desert: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3",
+                night: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3",
+                ancient: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3",
+                mystic: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3",
+                battle: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3",
+                peaceful: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-9.mp3",
+                epic: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-10.mp3"
+            };
+            
+            return bgmUrls[type] || bgmUrls.peaceful;
+        }
+        
+        // 播放场景BGM
+        function playSceneBgm(type) {
+            const bgmUrl = getBgmUrl(type);
+            
+            // 如果音乐不同，则切换音乐
+            if (elements.bgmElement.src !== bgmUrl) {
+                elements.bgmElement.src = bgmUrl;
+                elements.bgmElement.volume = gameState.bgmVolume;
+                
+                // 尝试播放，处理浏览器自动播放限制
+                elements.bgmElement.play().catch(e => {
+                    console.log("无法自动播放BGM，请点击页面后再试:", e);
+                    
+                    // 添加点击后播放的事件监听
+                    const playOnClick = () => {
+                        elements.bgmElement.play().then(() => {
+                            document.removeEventListener('click', playOnClick);
+                        }).catch(err => console.log("播放失败:", err));
+                    };
+                    
+                    document.addEventListener('click', playOnClick);
+                });
+            }
+        }
+        
+        // 切换场景
+        function changeScene(index) {
+            gameState.currentScene = index;
+            gameState.expMultiplier = scenes[index].multiplier;
+            
+            // 更新UI
+            elements.currentScene.textContent = scenes[index].name;
+            elements.expMultiplier.textContent = `${scenes[index].multiplier}x`;
+            
+            // 更新当前页的场景按钮状态
+            document.querySelectorAll('.scene-btn').forEach(btn => {
+                const btnIndex = parseInt(btn.dataset.index);
+                if (btnIndex === index) {
+                    btn.classList.add('scene-active');
+                } else {
+                    btn.classList.remove('scene-active');
+                }
+            });
+            
+            // 更新背景和添加动画
+            elements.gameBody.className = `bg-gradient-to-br ${scenes[index].bg} min-h-screen text-light flex flex-col items-center justify-center p-4 font-sans transition-all duration-1000 animate-scene-change`;
+            
+            // 播放场景BGM
+            playSceneBgm(scenes[index].bgm);
+            
+            // 显示场景切换效果
+            showSceneChangeEffect(scenes[index].name);
+            
+            // 重新计算经验获取量
+            updateExpRates();
+            updateUI();
+        }
+        
+        // 显示场景切换效果
+        function showSceneChangeEffect(sceneName) {
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-accent/90 text-dark font-bold py-4 px-8 rounded-xl shadow-2xl z-50 transition-all duration-1000';
+            notification.textContent = `已切换到 ${sceneName}`;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 1000);
+            }, 1500);
+        }
+        
+        // 初始化背包
+        function initBackpack() {
+            renderBackpack();
+        }
+        
+        // 渲染背包
+        function renderBackpack() {
+            elements.backpackContainer.innerHTML = '';
+            let uniqueItemsCount = gameState.backpack.length;
+            let totalPotionsCount = 0;
+            
+            // 计算总丹药数量
+            gameState.backpack.forEach(item => {
+                totalPotionsCount += item.quantity;
+            });
+            
+            // 显示背包物品
+            gameState.backpack.forEach((item, index) => {
+                const { type, multiplier, name, quantity, icon, description } = item;
+                const slotElement = document.createElement('div');
+                slotElement.className = 'backpack-slot bg-slate-700 rounded-lg p-1 aspect-square flex items-center justify-center transition-all hover:bg-slate-600 tooltip';
+                
+                let colorClass = 'potion-common';
+                let iconColor = 'text-secondary';
+                let tooltipText = `${name} - ${description}\n使用后获得当前总经验${multiplier}倍的经验值`;
+                
+                if (type === 'rare') {
+                    colorClass = 'potion-rare';
+                    iconColor = 'text-rare';
+                } else if (type === 'epic') {
+                    colorClass = 'potion-epic';
+                    iconColor = 'text-epic';
+                } else if (type === 'legend') {
+                    colorClass = 'potion-legend';
+                    iconColor = 'text-legend';
+                } else if (type === 'mythic') {
+                    colorClass = 'potion-mythic';
+                    iconColor = 'text-mythic';
+                } else if (type === 'celestial') {
+                    colorClass = 'potion-celestial';
+                    iconColor = 'text-celestial';
+                } else if (type === 'ancient') {
+                    colorClass = 'potion-ancient';
+                    iconColor = 'text-ancient';
+                } else if (type === 'dragon') {
+                    colorClass = 'potion-dragon';
+                    iconColor = 'text-dragon';
+                } else if (type === 'phoenix') {
+                    colorClass = 'potion-phoenix';
+                    iconColor = 'text-phoenix';
+                } else if (type === 'void') {
+                    colorClass = 'potion-void';
+                    iconColor = 'text-void';
+                }
+                
+                slotElement.innerHTML = `
+                    <div class="${colorClass} w-full h-full rounded flex items-center justify-center animate-drop cursor-pointer relative">
+                        <i class="fa ${icon} ${iconColor} text-lg"></i>
+                        <div class="absolute text-xs font-bold ${iconColor}">${multiplier}x</div>
+                        <div class="absolute bottom-0 right-0 bg-dark/70 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                            ${quantity}
+                        </div>
+                    </div>
+                `;
+                
+                slotElement.dataset.tooltip = tooltipText;
+                
+                // 绑定使用丹药事件
+                slotElement.addEventListener('click', () => {
+                    usePotion(index);
+                });
+                
+                elements.backpackContainer.appendChild(slotElement);
+            });
+            
+            // 填充空槽位
+            for (let i = uniqueItemsCount; i < 500; i++) {
+                const slotElement = document.createElement('div');
+                slotElement.className = 'backpack-slot bg-slate-700 rounded-lg p-1 aspect-square flex items-center justify-center transition-all hover:bg-slate-600';
+                slotElement.innerHTML = '<i class="fa fa-plus text-slate-500"></i>';
+                elements.backpackContainer.appendChild(slotElement);
+            }
+            
+            elements.potionCount.textContent = totalPotionsCount;
+        }
+        
+        // 尝试添加丹药到背包（支持叠加）
+        function addPotionToBackpack(potion) {
+            // 检查背包中是否已有相同类型的丹药
+            const existingItemIndex = gameState.backpack.findIndex(
+                item => item.type === potion.type && item.name === potion.name
+            );
+            
+            if (existingItemIndex !== -1) {
+                // 叠加到现有物品
+                gameState.backpack[existingItemIndex].quantity++;
+            } else {
+                // 检查背包是否还有空间（不超过500种独特物品）
+                if (gameState.backpack.length < 500) {
+                    // 添加新物品
+                    gameState.backpack.push({...potion, quantity: 1});
+                } else {
+                    return false; // 背包已满
+                }
+            }
+            
+            renderBackpack();
+            
+            // 显示获得丹药提示
+            elements.potionName.textContent = potion.name;
+            elements.potionDropNotification.style.opacity = '1';
+            elements.potionDropNotification.style.pointerEvents = 'auto';
+            elements.potionDropNotification.style.transform = 'translateX(0)';
+            
+            setTimeout(() => {
+                elements.potionDropNotification.style.opacity = '0';
+                elements.potionDropNotification.style.pointerEvents = 'none';
+                elements.potionDropNotification.style.transform = 'translateX(10px)';
+            }, 2000);
+            
+            return true;
+        }
+        
+        // 使用丹药
+        function usePotion(index) {
+            if (index >= 0 && index < gameState.backpack.length) {
+                const item = gameState.backpack[index];
+                const expGain = Math.floor(gameState.totalExp * item.multiplier);
+                
+                // 获得经验
+                gameState.currentExp += expGain;
+                gameState.totalExp += expGain;
+                
+                // 减少数量或移除物品
+                item.quantity--;
+                if (item.quantity <= 0) {
+                    gameState.backpack.splice(index, 1);
+                }
+                
+                // 显示使用效果
+                elements.usedPotionName.textContent = item.name;
+                elements.potionExpGain.textContent = `+${expGain}`;
+                elements.potionUseNotification.style.opacity = '1';
+                elements.potionUseNotification.style.pointerEvents = 'auto';
+                elements.potionUseNotification.style.scale = '1';
+                
+                setTimeout(() => {
+                    elements.potionUseNotification.style.opacity = '0';
+                    elements.potionUseNotification.style.pointerEvents = 'none';
+                    elements.potionUseNotification.style.scale = '0.9';
+                }, 2000);
+                
+                // 更新UI
+                renderBackpack();
+                updateUI();
+            }
+        }
+        
+        // 尝试掉落丹药
+        function tryDropPotion(sceneIndex) {
+            const scene = scenes[sceneIndex];
+            const chances = scene.potionChances;
+            const random = Math.random() * 100; // 0-100的随机数
+            
+            let total = 0;
+            for (const [type, chance] of Object.entries(chances)) {
+                total += chance;
+                if (random <= total && chance > 0) {
+                    // 确定倍率和随机选择一个同类型丹药
+                    const potionsOfType = potionData[type];
+                    if (potionsOfType && potionsOfType.length > 0) {
+                        const potionIndex = Math.floor(Math.random() * potionsOfType.length);
+                        const selectedPotion = potionsOfType[potionIndex];
+                        
+                        // 添加到背包
+                        addPotionToBackpack({ 
+                            type, 
+                            ...selectedPotion
+                        });
+                    }
+                    return;
+                }
+            }
+        }
+        
+        // 更新经验获取速率（考虑倍率）
+        function updateExpRates() {
+            gameState.expRate = Math.floor(gameState.baseExpRate * gameState.expMultiplier);
+            gameState.clickExpAmount = Math.floor(gameState.baseClickExpAmount * gameState.expMultiplier);
+        }
+        
+        // 更新UI显示
+        function updateUI() {
+            elements.levelBadge.textContent = gameState.level;
+            elements.currentExp.textContent = gameState.currentExp;
+            elements.totalExp.textContent = gameState.totalExp;
+            elements.expToNext.textContent = `/ ${gameState.expToNext.toLocaleString()}`;
+            elements.expRate.textContent = gameState.expRate;
+            elements.clickExpAmount.textContent = gameState.clickExpAmount;
+            elements.autoUpgradeCost.textContent = gameState.autoUpgradeCost.toLocaleString();
+            elements.clickUpgradeCost.textContent = gameState.clickUpgradeCost.toLocaleString();
+            
+            // 计算经验条百分比（限制在100%以内）
+            const expPercentage = Math.min((gameState.currentExp / gameState.expToNext) * 100, 100);
+            elements.expBar.style.width = `${expPercentage}%`;
+            
+            // 当经验快满时添加发光效果
+            if (expPercentage > 80) {
+                elements.expBar.classList.add('exp-glow');
+            } else {
+                elements.expBar.classList.remove('exp-glow');
+            }
+            
+            // 检查角色升级按钮是否可点击
+            if (gameState.currentExp >= gameState.expToNext) {
+                elements.playerUpgradeButton.classList.remove('btn-disabled', 'hover:bg-purple-700');
+                elements.playerUpgradeButton.classList.add('btn-ready');
+                elements.playerUpgradeButton.disabled = false;
+            } else {
+                elements.playerUpgradeButton.classList.add('btn-disabled', 'hover:bg-purple-700');
+                elements.playerUpgradeButton.classList.remove('btn-ready');
+                elements.playerUpgradeButton.disabled = true;
+            }
+            
+            // 检查自动升级按钮是否可点击
+            if (gameState.totalExp >= gameState.autoUpgradeCost) {
+                elements.upgradeAutoButton.classList.remove('btn-disabled', 'hover:bg-blue-600');
+                elements.upgradeAutoButton.disabled = false;
+            } else {
+                elements.upgradeAutoButton.classList.add('btn-disabled', 'hover:bg-blue-600');
+                elements.upgradeAutoButton.disabled = true;
+            }
+            
+            // 检查点击升级按钮是否可点击
+            if (gameState.totalExp >= gameState.clickUpgradeCost) {
+                elements.upgradeClickButton.classList.remove('btn-disabled', 'hover:bg-pink-600');
+                elements.upgradeClickButton.disabled = false;
+            } else {
+                elements.upgradeClickButton.classList.add('btn-disabled', 'hover:bg-pink-600');
+                elements.upgradeClickButton.disabled = true;
+            }
+            
+            // 检查是否有新场景解锁
+            checkSceneUnlocks();
+        }
+        
+        // 检查是否有新场景解锁
+        function checkSceneUnlocks() {
+            const previouslyUnlocked = scenes.filter(s => s.level <= gameState.level - 1).length;
+            const newlyUnlocked = scenes.filter(s => s.level <= gameState.level).length;
+            
+            if (newlyUnlocked > previouslyUnlocked) {
+                const unlockedScene = scenes[newlyUnlocked - 1];
+                showSceneUnlockEffect(unlockedScene);
+                
+                // 如果解锁的场景不在当前页，自动切换到对应页
+                const scenePage = Math.ceil(newlyUnlocked / 10);
+                if (scenePage !== gameState.currentScenePage) {
+                    gameState.currentScenePage = scenePage;
+                    renderScenePage(scenePage);
+                } else {
+                    // 更新当前页的场景按钮状态
+                    document.querySelectorAll('.scene-btn').forEach((btn, i) => {
+                        const btnIndex = parseInt(btn.dataset.index);
+                        if (btnIndex === newlyUnlocked - 1) {
+                            btn.classList.remove('scene-locked');
+                            btn.disabled = false;
+                        }
+                    });
+                }
+            }
+        }
+        
+        // 显示场景解锁效果
+        function showSceneUnlockEffect(scene) {
+            elements.unlockedScene.textContent = scene.name;
+            elements.sceneUnlockNotification.style.opacity = '1';
+            elements.sceneUnlockNotification.style.pointerEvents = 'auto';
+            elements.sceneUnlockNotification.style.scale = '1';
+            
+            setTimeout(() => {
+                elements.sceneUnlockNotification.style.opacity = '0';
+                elements.sceneUnlockNotification.style.pointerEvents = 'none';
+                elements.sceneUnlockNotification.style.scale = '0.9';
+            }, 3000);
+        }
+        
+        // 获得经验（考虑倍率）
+        function gainExp(amount, fromClick = false) {
+            const actualAmount = Math.floor(amount * gameState.expMultiplier);
+            gameState.currentExp += actualAmount;
+            gameState.totalExp += actualAmount;
+            
+            // 如果点击获取经验，显示浮动文字并尝试掉落丹药
+            if (fromClick) {
+                showFloatingExp(actualAmount);
+                tryDropPotion(gameState.currentScene);
+            }
+            
+            // 更新UI
+            updateUI();
+        }
+        
+        // 玩家手动升级 - 每次升级后基础经验获取翻3倍
+        function playerUpgrade() {
+            if (gameState.currentExp >= gameState.expToNext) {
+                // 升级前的等级
+                const oldLevel = gameState.level;
+                
+                // 升级
+                gameState.level++;
+                gameState.currentExp -= gameState.expToNext;
+                
+                // 升级所需经验100倍增长
+                gameState.expToNext *= 188;
+                
+                // 角色升级后，基础自动和点击经验翻3倍
+                gameState.baseExpRate *= 3;
+                gameState.baseClickExpAmount *= 3;
+                
+                // 重新计算考虑倍率后的经验获取量
+                updateExpRates();
+                
+                // 显示升级动画和提示
+                showLevelUpEffect();
+                
+                // 更新UI
+                updateUI();
+            }
+        }
+        
+        // 升级自动获取经验（每次翻倍）
+        function upgradeAutoExp() {
+            if (gameState.totalExp >= gameState.autoUpgradeCost) {
+                // 消耗总经验
+                gameState.totalExp -= gameState.autoUpgradeCost;
+                
+                // 提升基础自动获取速率（每次升级翻倍）
+                gameState.baseExpRate *= 1.88;
+                
+                // 重新计算考虑倍率后的经验获取量
+                updateExpRates();
+                
+                // 计算下次升级消耗（每次翻倍）
+                gameState.autoUpgradeCost *= 2;
+                
+                // 显示升级效果
+                showUpgradeEffect("自动获取");
+                
+                // 更新UI
+                updateUI();
+            }
+        }
+        
+        // 升级点击获取经验（每次翻倍）
+        function upgradeClickExp() {
+            if (gameState.totalExp >= gameState.clickUpgradeCost) {
+                // 消耗总经验
+                gameState.totalExp -= gameState.clickUpgradeCost;
+                
+                // 提升基础点击获取量（每次升级翻倍）
+                gameState.baseClickExpAmount *= 2;
+                
+                // 重新计算考虑倍率后的经验获取量
+                updateExpRates();
+                
+                // 计算下次升级消耗（每次翻倍）
+                gameState.clickUpgradeCost *= 2;
+                
+                // 显示升级效果
+                showUpgradeEffect("点击获取");
+                
+                // 更新UI
+                updateUI();
+            }
+        }
+        
+        // 显示升级效果
+        function showLevelUpEffect() {
+            // 等级徽章动画
+            elements.levelBadge.classList.add('animate-level-up');
+            setTimeout(() => {
+                elements.levelBadge.classList.remove('animate-level-up');
+            }, 1000);
+            
+            // 显示升级通知
+            elements.newLevelText.textContent = gameState.level;
+            elements.levelUpNotification.style.opacity = '1';
+            elements.levelUpNotification.style.pointerEvents = 'auto';
+            elements.levelUpNotification.style.scale = '1';
+            
+            setTimeout(() => {
+                elements.levelUpNotification.style.opacity = '0';
+                elements.levelUpNotification.style.pointerEvents = 'none';
+                elements.levelUpNotification.style.scale = '0.9';
+            }, 2000);
+        }
+        
+        // 显示强化效果
+        function showUpgradeEffect(type) {
+            // 按钮动画
+            if (type === "自动获取") {
+                elements.upgradeAutoButton.classList.add('animate-upgrade');
+                setTimeout(() => {
+                    elements.upgradeAutoButton.classList.remove('animate-upgrade');
+                }, 500);
+            } else {
+                elements.upgradeClickButton.classList.add('animate-upgrade');
+                setTimeout(() => {
+                    elements.upgradeClickButton.classList.remove('animate-upgrade');
+                }, 500);
+            }
+            
+            // 显示强化通知
+            elements.upgradeType.textContent = type;
+            elements.upgradeNotification.style.opacity = '1';
+            elements.upgradeNotification.style.pointerEvents = 'auto';
+            elements.upgradeNotification.style.scale = '1';
+            
+            setTimeout(() => {
+                elements.upgradeNotification.style.opacity = '0';
+                elements.upgradeNotification.style.pointerEvents = 'none';
+                elements.upgradeNotification.style.scale = '0.9';
+            }, 1500);
+        }
+        
+        // 显示浮动经验文字
+        function showFloatingExp(amount) {
+            const floatElement = document.createElement('div');
+            floatElement.className = 'absolute text-secondary font-bold transition-all duration-1000 ease-out';
+            floatElement.textContent = `+${amount.toLocaleString()}`;
+            
+            // 获取按钮位置，在按钮上方随机位置显示
+            const rect = elements.expButton.getBoundingClientRect();
+            const x = rect.left + window.scrollX + Math.random() * rect.width - 20;
+            const y = rect.top + window.scrollY - 20;
+            
+            floatElement.style.left = `${x}px`;
+            floatElement.style.top = `${y}px`;
+            floatElement.style.opacity = '1';
+            
+            elements.floatingExpContainer.appendChild(floatElement);
+            
+            // 动画：上移并淡出
+            setTimeout(() => {
+                floatElement.style.transform = 'translateY(-30px)';
+                floatElement.style.opacity = '0';
+                
+                // 移除元素
+                setTimeout(() => {
+                    elements.floatingExpContainer.removeChild(floatElement);
+                }, 1000);
+            }, 10);
+        }
+        
+        // 自动获取经验
+        function startAutoExpGain() {
+            setInterval(() => {
+                if (gameState.isAutoGaining) {
+                    // 这里使用baseExpRate而不是expRate，因为gainExp函数会应用倍率
+                    gainExp(gameState.baseExpRate);
+                }
+            }, 1000);
+        }
+        
+        // 绑定按钮点击事件
+        elements.expButton.addEventListener('click', () => {
+            // 这里使用baseClickExpAmount而不是clickExpAmount，因为gainExp函数会应用倍率
+            gainExp(gameState.baseClickExpAmount, true);
+            
+            // 按钮点击动画
+            elements.expButton.classList.add('scale-95');
+            setTimeout(() => {
+                elements.expButton.classList.remove('scale-95');
+            }, 150);
+        });
+        
+        // 绑定自动升级按钮事件
+        elements.upgradeAutoButton.addEventListener('click', upgradeAutoExp);
+        
+        // 绑定点击升级按钮事件
+        elements.upgradeClickButton.addEventListener('click', upgradeClickExp);
+        
+        // 绑定玩家升级按钮事件
+        elements.playerUpgradeButton.addEventListener('click', playerUpgrade);
+        
+        // 初始化游戏
+        function initGame() {
+            initScenes();
+            initBackpack();
+            updateExpRates();
+            updateUI();
+            startAutoExpGain();
+            
+            // 播放初始场景BGM
+            playSceneBgm(scenes[0].bgm);
+        }
+        
+        // 启动游戏
+        initGame();
+    </script>
+</body>
+</html>
